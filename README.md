@@ -94,6 +94,27 @@ devlog
 7. 초안 미리보기 → 수정 or 저장
 ```
 
+### devLog 보기
+
+```bash
+devlog view
+```
+
+저장된 devLog를 GitHub 스타일 HTML로 변환하여 브라우저에서 열어줍니다.
+시간순 일지 또는 프로젝트별 일지를 선택할 수 있습니다.
+
+![일지 유형 선택](screenshots/06-view-select.png)
+
+![프로젝트 선택](screenshots/07-view-project.png)
+
+![태스크 선택](screenshots/08-view-task.png)
+
+![브라우저 미리보기](screenshots/09-view-browser.png)
+
+```bash
+devlog view ~/devlog/daily/2026-04-10_1930.md   # 특정 파일 바로 열기
+```
+
 ## 저장 구조
 
 ```

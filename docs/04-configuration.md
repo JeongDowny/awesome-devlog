@@ -53,5 +53,7 @@ DevLog 초기 설정
 
 | 명령어 | 설명 |
 |--------|------|
-| `devlog` | 데브로그 생성 (메인 기능) |
+| `devlog` | devLog 생성 (메인 기능) |
 | `devlog init` | 초기 설정 / 설정 재구성 |
+| `devlog view` | 저장된 devLog를 HTML로 변환하여 브라우저에서 열기 |
+| `devlog view <파일경로>` | 특정 마크다운 파일을 바로 열기 |

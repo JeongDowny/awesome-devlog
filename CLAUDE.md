@@ -29,7 +29,8 @@ src/
 ├── index.ts              # CLI 진입점 (bin)
 ├── commands/
 │   ├── generate.ts       # devlog 메인 명령
-│   └── init.ts           # devlog init (초기 설정)
+│   ├── init.ts           # devlog init (초기 설정)
+│   └── view.ts           # devlog view (HTML 변환 + 브라우저 열기)
 ├── collectors/
 │   ├── session-log.ts    # Claude Code 세션 로그 수집
 │   ├── history.ts        # history.jsonl 인덱싱
