@@ -1,0 +1,60 @@
+{
+  "name": "awesome-devlog",
+  "version": "0.1.0",
+  "description": "Claude Code 세션 로그를 자동 수집·구조화하여 데브로그를 생성하는 CLI 도구",
+  "type": "module",
+  "bin": {
+    "devlog": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "lint": "biome lint ./src",
+    "format": "biome format ./src",
+    "check": "biome check ./src",
+    "check:fix": "biome check --write ./src",
+    "type": "tsc --noEmit",
+    "prepublishOnly": "pnpm check && pnpm type && pnpm build"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "devlog",
+    "claude-code",
+    "cli",
+    "developer-log",
+    "productivity",
+    "ai"
+  ],
+  "author": "JeongDowny",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JeongDowny/awesome-devlog.git"
+  },
+  "homepage": "https://github.com/JeongDowny/awesome-devlog#readme",
+  "bugs": {
+    "url": "https://github.com/JeongDowny/awesome-devlog/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "packageManager": "pnpm@10.15.0",
+  "dependencies": {
+    "@clack/prompts": "^1.2.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.10",
+    "@types/node": "^25.5.2",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.2"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}

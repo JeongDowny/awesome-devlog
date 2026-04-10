@@ -1,0 +1,30 @@
+# 빌드 결과물
+dist/
+*.tsbuildinfo
+
+# 의존성
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Claude Code 로컬 설정
+.claude/
+
+# 환경 변수 / 시크릿
+.env
+.env.*
+!.env.example
+
+# npm 퍼블리시 관련
+*.tgz
+
+# 테스트 출력 (데브로그 결과물이 repo에 포함되지 않도록)
+devlog-output/

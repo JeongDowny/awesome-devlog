@@ -1,0 +1,24 @@
+# 소스 코드 (dist만 배포)
+src/
+tsconfig.json
+tsup.config.ts
+biome.json
+
+# 문서 / 설정
+docs/
+screenshots/
+.claude/
+CLAUDE.md
+.gitignore
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# 테스트 / 개발
+devlog-output/
+*.tsbuildinfo
+*.tgz
