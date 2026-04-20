@@ -7,6 +7,7 @@ import { loadConfig } from "../config/config.js";
 import { runInteractiveSession } from "../interactive/questions.js";
 import type { CollectedData, ProjectGroup, Task } from "../types/index.js";
 import { extractProjectName, isGitRepo, resolveWorktreeToMain } from "../utils/path.js";
+import { startProgressTicker } from "../utils/progress.js";
 import { listProjectFiles, renderMarkdown, saveDailyLog, saveProjectLogs } from "../writer/markdown.js";
 
 const DAYS_TO_SHOW = 7;
@@ -258,10 +259,24 @@ export async function runGenerate(): Promise<void> {
   // 8. Claude Code로 구조화
   s.start("Claude Code로 구조화하는 중... (1~2분 소요)");
 
+  let structurizeState = { taskCount: 0, chars: 0 };
+  const stopStructurizeTicker = startProgressTicker(s, () => {
+    if (structurizeState.taskCount > 0) {
+      return `Claude Code로 구조화하는 중... ${structurizeState.taskCount}개 태스크 생성됨`;
+    }
+    if (structurizeState.chars > 0) {
+      return `Claude Code로 구조화하는 중... ${structurizeState.chars.toLocaleString("ko-KR")}자 수신`;
+    }
+    return "Claude Code로 구조화하는 중...";
+  });
+
   let tasks: Task[];
   try {
-    tasks = await structurizeTasks(collectedData);
+    tasks = await structurizeTasks(collectedData, (state) => {
+      structurizeState = state;
+    });
   } catch (err: unknown) {
+    stopStructurizeTicker();
     s.stop("구조화 실패");
     const message = err instanceof Error ? err.message : String(err);
     log.error(`구조화에 실패했어요: ${message}`);
@@ -269,6 +284,7 @@ export async function runGenerate(): Promise<void> {
     return;
   }
 
+  stopStructurizeTicker();
   s.stop(`${tasks.length}개 태스크로 구조화 완료!`);
 
   if (tasks.length === 0) {
@@ -323,10 +339,22 @@ export async function runGenerate(): Promise<void> {
     }
 
     s.start("초안을 수정하는 중...");
+    let reviseChars = 0;
+    const stopReviseTicker = startProgressTicker(s, () => {
+      if (reviseChars > 0) {
+        return `초안을 수정하는 중... ${reviseChars.toLocaleString("ko-KR")}자 수신`;
+      }
+      return "초안을 수정하는 중...";
+    });
+
     try {
-      markdown = await reviseMarkdown(markdown, revisionPrompt as string);
+      markdown = await reviseMarkdown(markdown, revisionPrompt as string, (state) => {
+        reviseChars = state.chars;
+      });
+      stopReviseTicker();
       s.stop("초안 수정 완료!");
     } catch (err: unknown) {
+      stopReviseTicker();
       s.stop("수정 실패");
       const message = err instanceof Error ? err.message : String(err);
       log.error(`수정에 실패했어요: ${message}`);
@@ -334,21 +362,32 @@ export async function runGenerate(): Promise<void> {
   }
 
   // 11. 프로젝트별 태스크 매칭
-  s.start("프로젝트별 일지를 매칭하는 중...");
-
   const taskFileMap = new Map<number, string | null>();
   const projectNames = [...new Set(tasks.map((t) => t.project).filter((p) => p !== "기타"))];
 
-  for (const projectName of projectNames) {
-    const existingFiles = listProjectFiles(config.outputDir, projectName);
-    const projectTaskIndices = tasks.map((t, i) => (t.project === projectName ? i : -1)).filter((i) => i !== -1);
-    const projectTaskTitles = projectTaskIndices.map((i) => tasks[i].title);
+  s.start("프로젝트별 일지를 매칭하는 중...");
+  let matchedProjects = 0;
+  const stopMatchTicker = startProgressTicker(s, () => {
+    if (projectNames.length === 0) return "프로젝트별 일지를 매칭하는 중...";
+    return `프로젝트별 일지를 매칭하는 중... (${matchedProjects}/${projectNames.length})`;
+  });
 
-    const matchResult = await matchTasksToFiles(projectTaskTitles, existingFiles);
+  try {
+    for (const projectName of projectNames) {
+      const existingFiles = listProjectFiles(config.outputDir, projectName);
+      const projectTaskIndices = tasks.map((t, i) => (t.project === projectName ? i : -1)).filter((i) => i !== -1);
+      const projectTaskTitles = projectTaskIndices.map((i) => tasks[i].title);
 
-    for (let j = 0; j < projectTaskIndices.length; j++) {
-      taskFileMap.set(projectTaskIndices[j], matchResult.get(j) ?? null);
+      const matchResult = await matchTasksToFiles(projectTaskTitles, existingFiles);
+
+      for (let j = 0; j < projectTaskIndices.length; j++) {
+        taskFileMap.set(projectTaskIndices[j], matchResult.get(j) ?? null);
+      }
+
+      matchedProjects++;
     }
+  } finally {
+    stopMatchTicker();
   }
 
   s.stop("매칭 완료!");

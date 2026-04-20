@@ -1,6 +1,7 @@
-import { confirm, isCancel, log, text } from "@clack/prompts";
+import { confirm, isCancel, log, spinner, text } from "@clack/prompts";
 import { suggestLessons } from "../analyzer/structurize.js";
 import type { Task } from "../types/index.js";
+import { startProgressTicker } from "../utils/progress.js";
 
 const QUESTION_TAG_REGEX = /\[질문 필요: ([^\]]+)\]/g;
 const MAX_QUESTIONS_PER_TASK = 5;
@@ -137,8 +138,22 @@ export async function runInteractiveSession(tasks: Task[]): Promise<{ tasks: Tas
     // AI가 배운 점 제안
     const mainTasks = tasks.filter((t) => t.problem && t.solution);
     if (mainTasks.length > 0) {
+      const s = spinner();
+      s.start("배운 점을 제안받는 중...");
+      let lessonState = { lessonCount: 0, chars: 0 };
+      const stopTicker = startProgressTicker(s, () => {
+        if (lessonState.lessonCount > 0) {
+          return `배운 점을 제안받는 중... ${lessonState.lessonCount}개 수신`;
+        }
+        return "배운 점을 제안받는 중...";
+      });
+
       try {
-        const suggestions = await suggestLessons(mainTasks);
+        const suggestions = await suggestLessons(mainTasks, (state) => {
+          lessonState = state;
+        });
+        stopTicker();
+        s.stop(`${suggestions.length}개 제안 받음`);
 
         for (let i = 0; i < Math.min(suggestions.length, mainTasks.length); i++) {
           log.info(`배운 점 제안 (${mainTasks[i].title}): "${suggestions[i]}"`);
@@ -156,6 +171,8 @@ export async function runInteractiveSession(tasks: Task[]): Promise<{ tasks: Tas
           }
         }
       } catch {
+        stopTicker();
+        s.stop("배운 점 제안 실패");
         log.warn("배운 점 제안 생성에 실패했어요. 건너뛸게요.");
       }
     }
