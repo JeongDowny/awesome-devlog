@@ -4,6 +4,9 @@ import { basename, join } from "node:path";
 
 const CLAUDE_DIR = join(homedir(), ".claude");
 const PROJECTS_DIR = join(CLAUDE_DIR, "projects");
+const CODEX_DIR = join(homedir(), ".codex");
+const CODEX_SESSIONS_DIR = join(CODEX_DIR, "sessions");
+const CODEX_HISTORY_PATH = join(CODEX_DIR, "history.jsonl");
 
 /**
  * 프로젝트 절대 경로를 Claude Code 디렉터리명으로 변환
@@ -85,4 +88,4 @@ export function isGitRepo(repoPath: string): boolean {
   return existsSync(join(repoPath, ".git"));
 }
 
-export { CLAUDE_DIR, PROJECTS_DIR };
+export { CLAUDE_DIR, CODEX_DIR, CODEX_HISTORY_PATH, CODEX_SESSIONS_DIR, PROJECTS_DIR };

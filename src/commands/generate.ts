@@ -1,5 +1,6 @@
 import { intro, isCancel, log, multiselect, outro, select, spinner, text } from "@clack/prompts";
 import { matchTasksToFiles, reviseMarkdown, structurizeTasks } from "../analyzer/structurize.js";
+import { collectCodexSessionLog, indexCodexSessionsInRange } from "../collectors/codex-session-log.js";
 import { collectGitLog } from "../collectors/git-log.js";
 import { indexSessionsInRange } from "../collectors/history.js";
 import { collectSessionLog } from "../collectors/session-log.js";
@@ -89,7 +90,11 @@ export async function runGenerate(): Promise<void> {
   const rangeStart = new Date(sortedDates[0]);
   const rangeEnd = new Date(sortedDates[sortedDates.length - 1]);
 
-  const rangeSessions = await indexSessionsInRange(rangeStart, rangeEnd);
+  const [claudeSessions, codexSessions] = await Promise.all([
+    indexSessionsInRange(rangeStart, rangeEnd),
+    indexCodexSessionsInRange(rangeStart, rangeEnd),
+  ]);
+  const rangeSessions = [...claudeSessions, ...codexSessions];
 
   // 불연속 날짜 선택 대응: 선택된 날짜에 해당하는 세션만 필터링
   const allSessions = rangeSessions.filter((s) => {
@@ -98,7 +103,7 @@ export async function runGenerate(): Promise<void> {
   });
 
   if (allSessions.length === 0) {
-    outro("선택한 날짜에 Claude Code 세션이 없어요.");
+    outro("선택한 날짜에 Claude Code / Codex 세션이 없어요.");
     return;
   }
 
@@ -160,7 +165,8 @@ export async function runGenerate(): Promise<void> {
     const weekday = WEEKDAYS[sessionDate.getDay()];
     const start = formatTime(session.startTime);
     const end = formatTime(session.endTime);
-    const label = `[${dateLabel} ${weekday}] ${start}~${end}  ${projectName}  (${session.messageCount}개 메시지)`;
+    const sourceTag = session.source === "codex" ? "[Codex] " : "[Claude]";
+    const label = `${sourceTag} [${dateLabel} ${weekday}] ${start}~${end}  ${projectName}  (${session.messageCount}개 메시지)`;
 
     return {
       value: session.sessionId,
@@ -236,7 +242,10 @@ export async function runGenerate(): Promise<void> {
   // 세션 로그 수집 (I/O 바운드이므로 순차 처리로 충분)
   for (const [, group] of projectMap) {
     for (const session of group.sessions) {
-      const content = collectSessionLog(session.projectPath, session.sessionId);
+      const content =
+        session.source === "codex"
+          ? collectCodexSessionLog(session.sessionId)
+          : collectSessionLog(session.projectPath, session.sessionId);
       if (content) {
         sessionContents.set(session.sessionId, content);
       }

@@ -60,6 +60,7 @@ export async function indexSessionsInRange(startDate: Date, endDate: Date): Prom
     const sorted = data.timestamps.sort((a, b) => a - b);
 
     sessions.push({
+      source: "claude",
       projectPath: data.projectPath,
       sessionId,
       startTime: sorted[0],
